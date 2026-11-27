@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Peak Draft</title>
+  <script src="https://telegram.org"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #0e1218; color: #fff; min-height: 100vh; display: flex; justify-content: center; }
+    .app { width: 100%; max-width: 430px; min-height: 100vh; background: #13171f; padding: 14px 16px 20px; display: flex; flex-direction: column; }
+    .hidden { display: none !important; }
+    .screen { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; }
+    .pill { background: #1c222d; border: 1px solid rgba(255,255,255,0.07); border-radius: 99px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 4px; }
+    .tab-btn { background: transparent; border: none; border-radius: 0; padding: 10px 2px; font-size: 15px; font-weight: 700; color: #7a869a; position: relative; cursor: pointer; }
+    .tab-active { color: #fff; }
+    .tab-active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: #2ea6ff; border-radius: 3px 3px 0 0; }
+    .box { background: #1c222d; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 13px 14px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card { background: #232a37; border-radius: 14px; padding: 10px 12px; }
+    .stat-val { font-size: 17px; font-weight: 800; }
+    .stat-lbl { font-size: 10px; font-weight: 700; color: #7a869a; margin-top: 2px; }
+    .lbl-sm { font-size: 11px; color: #7a869a; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    .slider-num { font-size: 15px; font-weight: 800; min-width: 44px; text-align: right; }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 99px; background: #11151c; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.6); cursor: pointer; }
+    input[type="text"], input[type="number"], #names-box input { width: 100%; padding: 10px 12px; border-radius: 12px; background: #12161e; border: 1px solid rgba(255,255,255,0.08); color: #fff; font-size: 13px; font-weight: 700; outline: none; }
+    button { cursor: pointer; border: none; border-radius: 14px; padding: 10px 12px; font-weight: 700; color: #fff; background: #262e3d; transition: 0.15s; }
+    button:active { transform: scale(0.97); }
+    .btn-main { width: 100%; padding: 15px; border-radius: 16px; background: #2ea6ff; font-size: 15px; font-weight: 800; box-shadow: 0 4px 18px rgba(46,166,255,0.28); margin-top: auto; }
+    .btn-c { width: 54px; height: 38px; border-radius: 99px; background: #2ea6ff; font-size: 14px; font-weight: 800; padding: 0; flex-shrink: 0; }
+    .btn-c-dark { width: 54px; height: 38px; border-radius: 99px; background: #262e3d; color: #fff; font-size: 14px; font-weight: 800; padding: 0; flex-shrink: 0; }
+    .btn-buy { background: #2ea6ff; font-size: 12px; border-radius: 99px; padding: 10px; }
+    .btn-dis { background: #161b24; color: #525e70; cursor: not-allowed; font-size: 12px; border-radius: 99px; padding: 10px; }
+    .btn-ghost { width: 100%; background: #1c222d; border: 1px solid rgba(255,255,255,0.07); color: #8b98ad; font-size: 12px; }
+    .nft-card { background: #1c222d; border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    .nft-vis { position: relative; height: 190px; border-radius: 16px; overflow: hidden; background: radial-gradient(circle at 50% 35%, #2b4c7e, #141a24); }
+    .nft-vis img { width: 100%; height: 100%; object-fit: cover; }
+    .bdg-l { position: absolute; top: 10px; left: 10px; background: rgba(19,23,31,0.8); color: #e2e8f0; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .bdg-r { position: absolute; top: 10px; right: 10px; background: rgba(46,166,255,0.25); color: #60beff; border: 1px solid rgba(46,166,255,0.5); padding: 4px 9px; border-radius: 99px; font-size: 10px; font-weight: 800; }
+    .p-chip { background: #1c222d; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; text-align: left; padding: 9px 12px; font-size: 12px; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(9,12,16,0.75); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+    .p-chip-turn { border: 1.5px solid #2ea6ff !important; background: rgba(46,166,255,0.12) !important; box-shadow: 0 0 12px rgba(46,166,255,0.22); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="screen-setup" class="screen">
+      <div class="top-bar">
+        <div class="pill"><span style="color:#2ea6ff;">💎</span> PEAK DRAFT</div>
+        <div class="pill" style="color:#8b98ad; font-size:11px;">Offline</div>
+      </div>
+      <div class="box grid2" style="padding:8px;">
+        <div class="stat-card"><div class="stat-val" id="stat-slots">3 слота</div><div class="stat-lbl">КОМАНДА</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:#2ea6ff;" id="stat-bank">100 $</div><div class="stat-lbl">БЮДЖЕТ</div></div>
+      </div>
+      <div class="tabs">
+        <button id="cat-anime" onclick="setCat('anime')" class="tab-btn tab-active">⚔️ Аниме</button>
+        <button id="cat-bball" onclick="setCat('bball')" class="tab-btn">🏀 Баскетбол</button>
+      </div>
+      <div class="box">
+        <div class="lbl-sm">Участники</div>
+        <div class="slider-row"><span>👥</span><input id="inp-players" type="range" min="2" max="5" value="3" oninput="onPlayersChange(this.value); syncSlider(this)"><span id="lbl-players" class="slider-num">3</span></div>
+        <div id="names-box" class="grid2" style="margin-top:10px;"></div>
+      </div>
+      <div class="box">
+        <div class="lbl-sm">Героев в команде</div>
+        <div class="slider-row"><span>🛡️</span><input id="inp-team" type="range" min="1" max="10" value="3" oninput="onTeamSlide(this)"><span id="lbl-team" class="slider-num">3</span></div>
+      </div>
+      <div class="box">
+        <div class="lbl-sm">Стартовый банк</div>
+        <div class="slider-row"><span>💎</span><input id="inp-budget" type="range" min="10" max="500" value="100" oninput="onBudgetSlide(this)"><span id="lbl-budget" class="slider-num">100$</span></div>
+      </div>
+      <button onclick="startGame()" class="btn-main">Начать аукцион</button>
+    </div>
+
+        <div id="screen-auction" class="screen hidden" style="justify-content:space-between;">
+      <div>
+        <div class="top-bar" style="margin-bottom:8px;">
+          <button onclick="openExitModal()" class="pill" style="cursor:pointer; color:#e2e8f0; padding:6px 12px;">
+            ← Выход
+          </button>
+          <span id="lot-num" class="pill" style="padding:6px 12px; font-size:12px; color:#2ea6ff;">Лот #1</span>
+        </div>
+        <div id="players-bar" class="grid2"></div>
+      </div>
+
+      <div class="nft-card">
+        <div class="nft-vis">
+          <img id="card-img" src="" alt="">
+          <span id="card-title" class="bdg-l"></span>
+          <span class="bdg-r">MAX PEAK</span>
+        </div>
+        <div style="padding:2px 6px 4px;">
+          <h2 id="card-name" style="font-size:19px; font-weight:800; margin-bottom:4px;"></h2>
+          <p id="card-desc" style="font-size:12px; color:#94a3b8; line-height:1.45;"></p>
+        </div>
+      </div>
+
+      <div class="box" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input id="bid-val" type="number" min="1" value="1" oninput="renderBuyBtns()" style="flex:1; min-width:0; font-size:16px;">
+          <button id="btn-minus" class="btn-c-dark">-1</button>
+          <button id="btn-plus" class="btn-c">+1</button>
+        </div>
+        <div id="buy-btns" class="grid2"></div>
+        <button id="btn-skip" onclick="passToBroke()" class="btn-ghost hidden"></button>
+      </div>
+    </div>
+
+
+    <div id="screen-final" class="screen hidden">
+      <div class="top-bar"><div class="pill"><span style="color:#2ea6ff;">🏆</span> Финал драфта</div></div>
+      <div id="final-teams" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <button id="btn-judge" onclick="askJudge()" class="btn-main">⚖️ Узнать вердикт Судьи</button>
+      <div id="judge-box" class="box hidden" style="border-color:rgba(46,166,255,0.4); font-size:13px; line-height:1.55; white-space:pre-line;"></div>
+      <button onclick="location.reload()" class="btn-ghost" style="margin-top:auto;">Новая игра</button>
+    </div>
+  </div>
+
+  <div id="modal" onclick="this.classList.add('hidden')" class="modal-bg hidden">
+    <div onclick="event.stopPropagation()" class="box" style="width:100%; max-width:330px;">
+      <h3 id="modal-title" style="color:#2ea6ff; font-size:15px; margin-bottom:10px;"></h3>
+      <div id="modal-list" style="display:flex; flex-direction:column; gap:6px; font-size:12px;"></div>
+    </div>
+  </div>
+
+  <div id="exit-modal" onclick="closeExitModal()" class="modal-bg hidden">
+    <div onclick="event.stopPropagation()" class="box" style="width:100%; max-width:310px; text-align:center;">
+      <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;">Выйти в меню?</h3>
+      <p style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Текущий прогресс аукциона и собранные команды сбросятся.</p>
+      <div class="grid2">
+        <button onclick="closeExitModal()" class="btn-ghost" style="color:#fff;">Отмена</button>
+        <button onclick="confirmExit()" style="background:#ef4444; border-radius:14px; font-size:13px;">Ок</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
+    var MOCK = {
+      anime: [
+        { name: "Анос Волдигод", title: "Владыка демонов", img: "https://placehold.co", desc: "Пиковая форма: меч Венизднова разрушает концепции и законы логики, мгновенное воскрешение из Истока." },
+        { name: "Римуру Темпест", title: "Перерождение в слизь", img: "https://placehold.co", desc: "Истинный Дракон + Сиэль: поглощение любых атак Вельзевулом, управление пространством и временем." },
+        { name: "Рёмен Сукуна", title: "Магическая битва", img: "https://placehold.co", desc: "Истинная форма + Махорага: Мировой Разрез пространства и открытая территория Гробница Зла." },
+        { name: "Фанни Валентайн", title: "JoJo", img: "https://placehold.co", desc: "D4C Love Train: перенаправляет любой направленный урон и неудачу в случайную точку мира." },
+        { name: "Итачи Учиха", title: "Наруто", img: "https://placehold.co", desc: "Эдо Тенсей: бесконечная чакра и регенерация, Цукуёми, Зеркало Ята и запечатывающий Меч Тоцука." },
+        { name: "Зараки Кенпачи", title: "Блич", img: "https://placehold.co", desc: "Пиковый Банкай: чудовищная мощь берсерка, разрубающая метеориты и вакуум пространства." }
+      ],
+      bball: [
+        { name: "Шакил О'Нил", title: "NBA • Центровой", img: "https://placehold.co", desc: "Пик мощи в краске: неудержимый продавливающий данк, тотальный контроль подборов и защита кольца." },
+        { name: "Стефен Карри", title: "NBA • Разыгрывающий", img: "https://placehold.co", desc: "Лучший снайпер в истории: бросок с 10 метров без подготовки и растягивание всей защиты соперника." },
+        { name: "Майкл Джордан", title: "NBA • Защитник", img: "https://placehold.co", desc: "Эталон атаки и защиты: неостановимый средний с отклонением и стальные нервы в клатче." },
+        { name: "Леброн Джеймс", title: "NBA • Форвард", img: "https://placehold.co", desc: "Универсальный лидер: видение площадки распасовщика, таранный проход и защита на всех 5 позициях." },
+        { name: "Никола Йокич", title: "NBA • Центровой", img: "https://placehold.co", desc: "Гениальный плеймейкер на позиции центрового: скрытые передачи, трехочковый и чтение игры." },
+        { name: "Деннис Родман", title: "NBA • Форвард", img: "https://placehold.co", desc: "Король подборов и персональной опеки: намертво выключает лидеров соперника." }
+      ]
+    };
+    var cat = 'anime', players = [], teamSize = 3, pool = [], lotIdx = 0, lotNumber = 1, turnIdx = 0;
+
+    function syncSlider(el) {
+      var pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+      el.style.background = 'linear-gradient(90deg, #2ea6ff ' + pct + '%, #11151c ' + pct + '%)';
+    }
+    function onTeamSlide(el) { document.getElementById('lbl-team').textContent = el.value; document.getElementById('stat-slots').textContent = el.value + ' слота'; syncSlider(el); }
+    function onBudgetSlide(el) { document.getElementById('lbl-budget').textContent = el.value + '$'; document.getElementById('stat-bank').textContent = el.value + ' $'; syncSlider(el); }
+    function setCat(c) {
+      cat = c;
+      document.getElementById('cat-anime').className = c === 'anime' ? 'tab-btn tab-active' : 'tab-btn';
+      document.getElementById('cat-bball').className = c === 'bball' ? 'tab-btn tab-active' : 'tab-btn';
+    }
+    function onPlayersChange(val) {
+      document.getElementById('lbl-players').textContent = val;
+      var box = document.getElementById('names-box');
+      var old = Array.from(box.querySelectorAll('input')).map(function(i) { return i.value; });
+      box.innerHTML = '';
+      for (var i = 0; i < parseInt(val); i++) {
+        var inp = document.createElement('input');
+        inp.value = old[i] || ('Игрок ' + (i + 1));
+        box.appendChild(inp);
+      }
+    }
+    async function startGame() {
+      var startBtn = document.querySelector('#screen-setup .btn-main');
+      startBtn.textContent = '⏳ ИИ собирает пул пиковых героев...';
+      startBtn.disabled = true;
+
+      teamSize = parseInt(document.getElementById('inp-team').value);
+      var budget = parseInt(document.getElementById('inp-budget').value);
+      var inputs = document.getElementById('names-box').querySelectorAll('input');
+      players = Array.from(inputs).map(function(inp, idx) {
+        return { name: inp.value.trim() || ('Игрок ' + (idx + 1)), money: budget, team: [] };
+      });
+      players.sort(function() { return Math.random() - 0.5; });
+      players.forEach(function(p, idx) { p.id = idx; });
+
+      var totalNeeded = players.length * teamSize;
+      try {
+        var r = await fetch('/api/pool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: cat, count: totalNeeded })
+        });
+        var data = await r.json();
+        pool = data.pool;
+      } catch (e) {
+        alert('Ошибка связи с сервером, включен демо-пул');
+        pool = MOCK[cat].slice();
+      }
+
+      startBtn.textContent = 'Начать аукцион';
+      startBtn.disabled = false;
+      turnIdx = 0; lotIdx = 0; lotNumber = 1;
+      document.getElementById('screen-setup').classList.add('hidden');
+      document.getElementById('screen-auction').classList.remove('hidden');
+      renderAuction();
+    }
+
+    function nextValidTurn(advance) {
+      var n = players.length;
+      if (advance) turnIdx = (turnIdx + 1) % n;
+      for (var i = 0; i < n; i++) {
+        var idx = (turnIdx + i) % n;
+        if (players[idx].team.length < teamSize && players[idx].money >= 1) {
+          turnIdx = idx;
+          return idx;
+        }
+      }
+      return -1;
+    }
+
+    function renderAuction() {
+      if (players.every(function(p) { return p.team.length >= teamSize; })) { showFinal(); return; }
+      if (pool.length === 0) {
+        pool = MOCK[cat].slice().sort(function() { return Math.random() - 0.5; });
+      }
+      if (lotIdx >= pool.length) lotIdx = 0;
+      var item = pool[lotIdx];
+      document.getElementById('lot-num').textContent = 'Лот #' + lotNumber;
+      document.getElementById('card-img').src = item.img;
+      document.getElementById('card-title').textContent = item.title;
+      document.getElementById('card-name').textContent = item.name;
+      document.getElementById('card-desc').textContent = item.desc;
+      var bar = document.getElementById('players-bar');
+      bar.innerHTML = '';
+
+      var activeStarter = nextValidTurn(false);
+      var bar = document.getElementById('players-bar');
+      bar.innerHTML = '';
+      players.forEach(function(p, idx) {
+        var isTurn = (idx === activeStarter);
+        var btn = document.createElement('button');
+        btn.onclick = function() { showModal(p); };
+        btn.className = isTurn ? 'p-chip p-chip-turn' : 'p-chip';
+        var badge = isTurn ? '<span style="color:#60beff;font-size:10px;">⚡ 1-й ставит</span>' : '';
+        btn.innerHTML = '<div style="display:flex;justify-content:space-between;font-weight:800;"><span>' + p.name + '</span><span style="color:#2ea6ff;">' + p.money + '$</span></div>' +
+                        '<div style="display:flex;justify-content:space-between;font-size:10px;color:#7a869a;margin-top:2px;"><span>Слоты: ' + p.team.length + '/' + teamSize + '</span>' + badge + '</div>';
+        bar.appendChild(btn);
+      });
+
+      document.getElementById('bid-val').value = 0;
+      document.getElementById('bid-val').value = 1;
+      renderBuyBtns();
+    }
+    function addBid(n) {
+      var el = document.getElementById('bid-val');
+      el.value = Math.max(1, (parseInt(el.value) || 1) + n);
+      renderBuyBtns();
+    }
+
+    var holdTimer = null, holdDelay = null;
+    function bindHold(btnId, delta) {
+      var btn = document.getElementById(btnId);
+      function start(e) {
+        e.preventDefault();
+        addBid(delta);
+        holdDelay = setTimeout(function() {
+          holdTimer = setInterval(function() { addBid(delta); }, 75);
+        }, 320);
+      }
+      function stop() {
+        clearTimeout(holdDelay);
+        clearInterval(holdTimer);
+      }
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('touchstart', start, { passive: false });
+      window.addEventListener('mouseup', stop);
+      window.addEventListener('touchend', stop);
+      btn.addEventListener('mouseleave', stop);
+    }
+    bindHold('btn-minus', -1);
+    bindHold('btn-plus', 1);
+
+    function openExitModal() { document.getElementById('exit-modal').classList.remove('hidden'); }
+    function closeExitModal() { document.getElementById('exit-modal').classList.add('hidden'); }
+    function confirmExit() {
+      closeExitModal();
+      document.getElementById('screen-auction').classList.add('hidden');
+      document.getElementById('screen-setup').classList.remove('hidden');
+    }
+
+    
+    function renderBuyBtns() {
+      var bid = parseInt(document.getElementById('bid-val').value);
+      var box = document.getElementById('buy-btns');
+      box.innerHTML = '';
+      players.forEach(function(p) {
+        var full = p.team.length >= teamSize;
+        var invalid = isNaN(bid) || bid < 1;
+        var poor = bid > p.money;
+        var dis = full || invalid || poor;
+        var btn = document.createElement('button');
+        btn.disabled = dis;
+        btn.onclick = function() { buyLot(p.id, bid); };
+        btn.className = dis ? 'btn-dis' : 'btn-buy';
+        if (full) btn.textContent = p.name + ' (Полон)';
+        else if (invalid) btn.textContent = p.name + ' (Мин. 1$)';
+        else if (poor) btn.textContent = p.name + ' (Мало $)';
+        else btn.textContent = p.name + ' • ' + bid + '$';
+        box.appendChild(btn);
+      });
+          // В самом конце функции renderBuyBtns() (перед закрывающей скобкой }):
+      var needSlots = players.filter(function(p) { return p.team.length < teamSize; });
+      var brokeNeedSlots = needSlots.filter(function(p) { return p.money < 1; });
+      var richNeedSlots = needSlots.filter(function(p) { return p.money >= 1; });
+      var skipBtn = document.getElementById('btn-skip');
+
+      if (brokeNeedSlots.length > 0) {
+        skipBtn.classList.remove('hidden');
+        if (richNeedSlots.length === 0 && brokeNeedSlots.length === 1) {
+          skipBtn.textContent = 'Забрать за 0$ (' + brokeNeedSlots[0].name + ')';
+        } else {
+          skipBtn.textContent = '🎲 Пас (Рандом)';
+        }
+      } else {
+        skipBtn.classList.add('hidden');
+      }
+
+    }
+    function buyLot(pid, bid) {
+      var p = players.find(function(x) { return x.id === pid; });
+      p.money -= bid;
+      p.team.push({ name: pool[lotIdx].name, paid: bid });
+      pool.splice(lotIdx, 1);
+      lotNumber++;
+      nextValidTurn(true);
+      renderAuction();
+    }
+
+    function passToBroke() {
+      var broke = players.filter(function(p) { return p.team.length < teamSize && p.money < 1; });
+      if (broke.length === 0) return;
+
+      var lucky = broke[Math.floor(Math.random() * broke.length)];
+      var charName = pool[lotIdx].name;
+      lucky.team.push({ name: charName, paid: 0 });
+      pool.splice(lotIdx, 1);
+      lotNumber++;
+      nextValidTurn(true);
+      renderAuction();
+      showToast('🎲 ' + charName + ' → ' + lucky.name + ' (0$)');
+    }
+
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        t.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#2ea6ff;color:#fff;padding:8px 16px;border-radius:99px;font-size:12px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,0.5);z-index:100;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(function() { t.classList.add('hidden'); }, 2200);
+    }
+
+    function showFinal() {
+      document.getElementById('screen-auction').classList.add('hidden');
+      document.getElementById('screen-final').classList.remove('hidden');
+      document.getElementById('final-teams').innerHTML = players.map(function(p) {
+        var roster = p.team.map(function(t) { return t.name + ' (' + t.paid + '$)'; }).join(', ');
+        return '<div class="box">' +
+                 '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#2ea6ff;margin-bottom:4px;">' +
+                   '<span>' + p.name + '</span><span>Остаток: ' + p.money + '$</span>' +
+                 '</div>' +
+                 '<div style="font-size:12px;color:#e2e8f0;">' + roster + '</div>' +
+               '</div>';
+      }).join('');
+    }
+
+    async function askJudge() {
+      var btn = document.getElementById('btn-judge');
+      var box = document.getElementById('judge-box');
+      btn.classList.add('hidden');
+      box.classList.remove('hidden');
+      box.textContent = '🔮 Судья Gemini симулирует столкновение пиковых форм...';
+
+      var payload = {
+        category: cat,
+        teams: players.map(function(p) {
+          return { player: p.name, heroes: p.team.map(function(t) { return t.name; }) };
+        })
+      };
+      try {
+        var r = await fetch('/api/judge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        var res = await r.json();
+        box.innerHTML = '<div style="color:#2ea6ff;font-weight:800;margin-bottom:6px;">📍 ' + res.arena + '</div>' +
+                        '<div style="margin-bottom:10px;">' + res.story + '</div>' +
+                        '<div style="padding:10px;border-radius:12px;background:#12161e;border:1px solid #2ea6ff;">' +
+                        '<div style="font-weight:800;color:#60beff;">👑 Победитель: ' + res.winner + '</div>' +
+                        '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">' + res.reason + '</div></div>';
+      } catch (e) {
+        box.textContent = 'Ошибка при запросе к Судье. Проверь консоль сервера и VPN.';
+      }
+    }
+
+    onPlayersChange(3);
+    syncSlider(document.getElementById('inp-players'));
+    syncSlider(document.getElementById('inp-team'));
+    syncSlider(document.getElementById('inp-budget'));
+  </script>
+    <div id="toast" class="hidden" style="position:fixed; top:18px; left:50%; transform:translateX(-50%); background:#2ea6ff; color:#fff; padding:8px 16px; border-radius:99px; font-size:12px; font-weight:800; box-shadow:0 4px 16px rgba(0,0,0,0.5); z-index:100;"></div>
+</body>
+</html>
