@@ -42,22 +42,41 @@ class JudgeSchema(BaseModel):
     reason: str
 
 async def fetch_image(category: str, en_name: str) -> str:
-    fallback = f"https://ui-avatars.com{en_name.replace(' ', '+')}&background=162238&color=60beff&size=512"
-    async with httpx.AsyncClient(timeout=4.0) as http:
+    clean_name = en_name.strip()
+    fallback = f"https://dicebear.com{clean_name}&backgroundColor=162238"
+    headers = {"User-Agent": "PeakDraftApp/1.0"}
+    async with httpx.AsyncClient(timeout=6.0, headers=headers) as http:
         try:
             if category == "anime":
-                r = await http.get("https://jikan.moe", params={"q": en_name, "limit": 1})
-                data = r.json().get("data", [])
-                if data:
-                    return data[0]["images"]["jpg"]["image_url"]
+                query = "query ($s: String) { Character(search: $s) { image { large } } }"
+                r = await http.post(
+                    "https://anilist.co",
+                    json={"query": query, "variables": {"s": clean_name}},
+                )
+                char = (r.json().get("data") or {}).get("Character")
+                if char and char.get("image") and char["image"].get("large"):
+                    return char["image"]["large"]
             else:
-                slug = en_name.strip().replace(" ", "_")
-                r = await http.get(f"https://wikipedia.org{slug}")
-                if r.status_code == 200 and "thumbnail" in r.json():
-                    return r.json()["thumbnail"]["source"]
-        except Exception:
-            pass
+                r = await http.get(
+                    "https://wikipedia.org",
+                    params={
+                        "action": "query",
+                        "generator": "search",
+                        "gsrsearch": f"{clean_name} basketball",
+                        "gsrlimit": 1,
+                        "prop": "pageimages",
+                        "pithumbsize": 600,
+                        "format": "json",
+                    },
+                )
+                pages = (r.json().get("query") or {}).get("pages") or {}
+                for page in pages.values():
+                    if "thumbnail" in page:
+                        return page["thumbnail"]["source"]
+        except Exception as e:
+            print("Image fetch error:", en_name, e)
     return fallback
+
 
 @app.get("/")
 async def index():
